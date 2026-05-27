@@ -1,4 +1,7 @@
-import { IUserState } from "./auth.types";
+import { createAsyncThunk, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { IUpdateProfileData, IUpdateRoleData, IUser, IUserState } from "./auth.types";
+import api from "@/lib/axios";
+import { AxiosError } from "axios";
 
 
 
@@ -21,9 +24,15 @@ export const getCurrentUser = createAsyncThunk(
     try {
       const response = await api.get('/users/me');
       return response.data.user as IUser;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to get user');
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || 'Failed to fetch current user';
+        return rejectWithValue(message);
+      }
+      return rejectWithValue('Failed to fetch current user');
     }
+
+
   }
 );
 
@@ -34,12 +43,15 @@ export const updateProfile = createAsyncThunk(
     try {
       const response = await api.put('/users/profile', data);
       return response.data.user as IUser;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || 'Failed to update profile';
+        return rejectWithValue(message);
+      }
+      return rejectWithValue('Failed to update profile');
     }
   }
 );
-
 // Get all users (admin only)
 export const getAllUsers = createAsyncThunk(
   'user/getAllUsers',
@@ -50,8 +62,12 @@ export const getAllUsers = createAsyncThunk(
         users: response.data.users as IUser[],
         count: response.data.count as number,
       };
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to fetch users');
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || 'Failed to fetch users';
+        return rejectWithValue(message);
+      }
+      return rejectWithValue('Failed to fetch users');
     }
   }
 );
@@ -63,8 +79,12 @@ export const getUserById = createAsyncThunk(
     try {
       const response = await api.get(`/users/${id}`);
       return response.data.user as IUser;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'User not found');
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || 'User not found';
+        return rejectWithValue(message);
+      }
+      return rejectWithValue('User not found');
     }
   }
 );
@@ -76,8 +96,12 @@ export const updateUserRole = createAsyncThunk(
     try {
       const response = await api.put(`/users/${id}/role`, { role });
       return response.data.user as IUser;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to update role');
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || 'Failed to update role';
+        return rejectWithValue(message);
+      }
+      return rejectWithValue('Failed to update role');
     }
   }
 );
@@ -89,8 +113,12 @@ export const deleteUser = createAsyncThunk(
     try {
       await api.delete(`/users/${id}`);
       return id;
-    } catch (error: any) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to delete user');
+    } catch (error) {
+      if (error instanceof AxiosError) {
+        const message = error.response?.data?.message || 'Failed to delete user';
+        return rejectWithValue(message);
+      }
+      return rejectWithValue('Failed to delete user');
     }
   }
 );
