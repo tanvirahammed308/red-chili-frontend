@@ -45,12 +45,12 @@ export default function Navbar() {
   // Check if user is admin
   const isAdmin = currentUser?.role === "admin";
 
-  //  Mark component as mounted on client-side only
+  // Mark component as mounted on client-side only
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  //  Restore user session on page refresh (only on client)
+  // Restore user session on page refresh (only on client)
   useEffect(() => {
     const restoreUserSession = async () => {
       const token = localStorage.getItem("token");
@@ -160,6 +160,7 @@ export default function Navbar() {
   // Admin links
   const adminLinks = [
     { name: "Dashboard", href: "/admin", icon: <FaClipboardList className="text-xl" /> },
+     { name: "Manage Products", href: "/admin/products", icon: <FaStore className="text-xl" /> },
     { name: "Manage Users", href: "/admin/users", icon: <FaUser className="text-xl" /> },
     { name: "Manage Orders", href: "/admin/orders", icon: <FaShoppingCart className="text-xl" /> },
   ];
@@ -171,7 +172,14 @@ export default function Navbar() {
     { name: "Settings", href: "/settings", icon: <FaCog className="text-xl" /> },
   ];
 
-  //  Show loading skeleton on server-side or before mounting
+  // Handle navigation without page refresh
+  const handleNavigation = (href: string) => {
+    setIsSidebarOpen(false);
+    setIsDropdownOpen(false);
+    router.push(href);
+  };
+
+  // Show loading skeleton on server-side or before mounting
   if (!isMounted) {
     return (
       <nav className="bg-white shadow-lg sticky top-0 z-50">
@@ -198,45 +206,29 @@ export default function Navbar() {
       <nav className="bg-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
+            {/* Logo - removed onClick to prevent refresh */}
             <div className="flex-shrink-0">
-              <Link 
-                href="/" 
-                className="flex items-center gap-2 text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:opacity-80 transition"
-                onClick={closeSidebar}
+              <button
+                onClick={() => handleNavigation("/")}
+                className="flex items-center gap-2 text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer"
               >
                 <MdOutlineRestaurantMenu className="text-blue-600" />
                 <span>QuickBite</span>
-              </Link>
+              </button>
             </div>
 
-            {/* Desktop Navigation Links */}
+            {/* Desktop Navigation Links - changed to buttons */}
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
-                <Link
+                <button
                   key={link.name}
-                  href={link.href}
-                  className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
+                  onClick={() => handleNavigation(link.href)}
+                  className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium cursor-pointer"
                 >
                   {link.icon}
                   {link.name}
-                </Link>
+                </button>
               ))}
-              
-              {isAdmin && (
-                <div className="flex items-center space-x-8 border-l pl-8 ml-4">
-                  {adminLinks.map((link) => (
-                    <Link
-                      key={link.name}
-                      href={link.href}
-                      className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium"
-                    >
-                      {link.icon}
-                      {link.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Right side - User section */}
@@ -285,30 +277,28 @@ export default function Navbar() {
                       </div>
 
                       {userDropdownLinks.map((link) => (
-                        <Link
+                        <button
                           key={link.name}
-                          href={link.href}
-                          onClick={() => setIsDropdownOpen(false)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                          onClick={() => handleNavigation(link.href)}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition text-left"
                         >
                           {link.icon}
                           {link.name}
-                        </Link>
+                        </button>
                       ))}
 
                       {isAdmin && (
                         <>
                           <div className="border-t border-gray-100 my-1"></div>
                           {adminLinks.map((link) => (
-                            <Link
+                            <button
                               key={link.name}
-                              href={link.href}
-                              onClick={() => setIsDropdownOpen(false)}
-                              className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                              onClick={() => handleNavigation(link.href)}
+                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition text-left"
                             >
                               {link.icon}
                               {link.name}
-                            </Link>
+                            </button>
                           ))}
                         </>
                       )}
@@ -332,13 +322,12 @@ export default function Navbar() {
                 </div>
               ) : (
                 <div className="hidden md:flex items-center gap-3">
-                  <Link
-                    href="/login"
-                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
+                  <button
+                    onClick={() => handleNavigation("/login")}
+                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium cursor-pointer"
                   >
                     Login
-                  </Link>
-                  
+                  </button>
                 </div>
               )}
 
@@ -394,15 +383,14 @@ export default function Navbar() {
 
             <div className="py-4">
               {navLinks.map((link) => (
-                <Link
+                <button
                   key={link.name}
-                  href={link.href}
-                  onClick={closeSidebar}
-                  className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                  onClick={() => handleNavigation(link.href)}
+                  className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left"
                 >
                   {link.icon}
                   <span>{link.name}</span>
-                </Link>
+                </button>
               ))}
 
               {isAdmin && (
@@ -410,15 +398,14 @@ export default function Navbar() {
                   <div className="border-t border-gray-100 my-2"></div>
                   <p className="px-4 text-xs text-gray-400 uppercase tracking-wider mb-2 mt-2">Admin Panel</p>
                   {adminLinks.map((link) => (
-                    <Link
+                    <button
                       key={link.name}
-                      href={link.href}
-                      onClick={closeSidebar}
-                      className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      onClick={() => handleNavigation(link.href)}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left"
                     >
                       {link.icon}
                       <span>{link.name}</span>
-                    </Link>
+                    </button>
                   ))}
                 </>
               )}
@@ -428,15 +415,14 @@ export default function Navbar() {
                   <div className="border-t border-gray-100 my-2"></div>
                   <p className="px-4 text-xs text-gray-400 uppercase tracking-wider mb-2 mt-2">Account</p>
                   {userDropdownLinks.map((link) => (
-                    <Link
+                    <button
                       key={link.name}
-                      href={link.href}
-                      onClick={closeSidebar}
-                      className="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors"
+                      onClick={() => handleNavigation(link.href)}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left"
                     >
                       {link.icon}
                       <span>{link.name}</span>
-                    </Link>
+                    </button>
                   ))}
                 </>
               )}
@@ -445,15 +431,13 @@ export default function Navbar() {
             {!currentUser && !loading && (
               <div className="border-t border-gray-100 pt-4 pb-6">
                 <div className="px-4 space-y-3">
-                  <Link
-                    href="/login"
-                    onClick={closeSidebar}
+                  <button
+                    onClick={() => handleNavigation("/login")}
                     className="flex items-center justify-center gap-2 w-full px-4 py-3 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
                   >
                     <FaUserCircle className="text-lg" />
                     Login
-                  </Link>
-                  
+                  </button>
                 </div>
               </div>
             )}
