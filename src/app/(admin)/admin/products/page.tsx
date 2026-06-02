@@ -34,9 +34,15 @@ import {
   FaChartLine,
   FaArrowLeft,
   FaArrowRight,
-  FaStar
+  FaStar,
+  FaChevronLeft,
+  FaChevronRight,
+  FaAngleDoubleLeft,
+  FaAngleDoubleRight
 } from "react-icons/fa";
 import { MdCategory, MdDescription } from "react-icons/md";
+
+const ITEMS_PER_PAGE = 6; // Always 6 items per page
 
 export default function AdminProductsPage() {
   const { user, loading: authLoading } = useAuthGuard(true);
@@ -52,6 +58,10 @@ export default function AdminProductsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -73,6 +83,13 @@ export default function AdminProductsPage() {
     }
   }, [dispatch, user]);
 
+  // Update total pages when products change
+  useEffect(() => {
+    const filtered = getFilteredProducts();
+    setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    setCurrentPage(1);
+  }, [products, searchTerm, selectedCategory]);
+
   // Reset form
   const resetForm = () => {
     reset({
@@ -85,6 +102,54 @@ export default function AdminProductsPage() {
     setImagePreview("");
     setImageFile(null);
     setEditingProduct(null);
+  };
+
+  // Get filtered products
+  const getFilteredProducts = () => {
+    return products.filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            product.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = !selectedCategory || product.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  };
+
+  // Get paginated products
+  const getPaginatedProducts = () => {
+    const filtered = getFilteredProducts();
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    return filtered.slice(startIndex, endIndex);
+  };
+
+  // Pagination handlers
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToNextPage = () => goToPage(currentPage + 1);
+  const goToPrevPage = () => goToPage(currentPage - 1);
+
+  // Get page numbers to display
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    
+    if (end - start + 1 < maxVisible) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
   };
 
   // Open create form
@@ -118,12 +183,6 @@ export default function AdminProductsPage() {
     setShowForm(false);
   };
 
-  // Close details modal
-  const closeDetailsModal = () => {
-    setShowDetailsModal(false);
-    setSelectedProduct(null);
-  };
-
   // Handle image change
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,10 +213,6 @@ export default function AdminProductsPage() {
 
   // Handle form submit
   const onSubmit = async (data: ProductFormData) => {
-    console.log("🔴 1. Form data received:", data);
-    console.log("🔴 2. Image file:", imageFile);
-    console.log("🔴 3. Editing product:", editingProduct);
-    
     if (!data.name?.trim()) {
       Swal.fire({ icon: "error", title: "Error", text: "Product name is required" });
       return;
@@ -200,8 +255,6 @@ export default function AdminProductsPage() {
         image: imageFile || undefined,
       };
       
-      console.log("🔴 4. Sending to API:", productData);
-      
       if (editingProduct) {
         await dispatch(updateProduct({ id: editingProduct._id, data: productData })).unwrap();
         Swal.fire({
@@ -227,7 +280,6 @@ export default function AdminProductsPage() {
       dispatch(getAllProducts());
       
     } catch (error: any) {
-      console.error("🔴 6. Error:", error);
       Swal.fire({
         icon: "error",
         title: "Error",
@@ -277,14 +329,8 @@ export default function AdminProductsPage() {
     }
   };
 
-  // Filter products
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          product.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
+  const filteredProducts = getFilteredProducts();
+  const paginatedProducts = getPaginatedProducts();
   const lowStockCount = products.filter(p => p.stock > 0 && p.stock < 10).length;
   const outOfStockCount = products.filter(p => p.stock === 0).length;
 
@@ -419,72 +465,143 @@ export default function AdminProductsPage() {
                   </button>
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product._id}
-                      className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                    >
-                      <div className="relative h-48 overflow-hidden">
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                        <div className="absolute top-2 right-2 flex gap-1">
-                          <button
-                            onClick={() => handleOpenEdit(product)}
-                            className="p-2 bg-white/90 hover:bg-white rounded-full text-green-600 transition"
-                            title="Edit"
-                          >
-                            <FaEdit size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(product)}
-                            className="p-2 bg-white/90 hover:bg-white rounded-full text-red-600 transition"
-                            title="Delete"
-                          >
-                            <FaTrash size={14} />
-                          </button>
+                <>
+                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {paginatedProducts.map((product) => (
+                      <div
+                        key={product._id}
+                        className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                      >
+                        <div className="relative h-48 overflow-hidden">
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                          <div className="absolute top-2 right-2 flex gap-1">
+                            <button
+                              onClick={() => handleOpenEdit(product)}
+                              className="p-2 bg-white/90 hover:bg-white rounded-full text-green-600 transition"
+                              title="Edit"
+                            >
+                              <FaEdit size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(product)}
+                              className="p-2 bg-white/90 hover:bg-white rounded-full text-red-600 transition"
+                              title="Delete"
+                            >
+                              <FaTrash size={14} />
+                            </button>
+                          </div>
+                          {product.stock === 0 && (
+                            <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                              Out of Stock
+                            </div>
+                          )}
+                          {product.stock > 0 && product.stock < 10 && (
+                            <div className="absolute bottom-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
+                              Low Stock: {product.stock}
+                            </div>
+                          )}
                         </div>
-                        {product.stock === 0 && (
-                          <div className="absolute bottom-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                            Out of Stock
+                        <div className="p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex-1">
+                              <h3 className="font-semibold text-gray-800 text-lg line-clamp-1">{product.name}</h3>
+                              <p className="text-sm text-gray-500 line-clamp-2 mt-1">{product.description}</p>
+                            </div>
+                            <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600 ml-2 flex-shrink-0">
+                              {product.category}
+                            </span>
                           </div>
-                        )}
-                        {product.stock > 0 && product.stock < 10 && (
-                          <div className="absolute bottom-2 left-2 bg-orange-500 text-white text-xs px-2 py-1 rounded-full">
-                            Low Stock: {product.stock}
+                          <div className="flex justify-between items-center mt-3 pt-3 border-t">
+                            <div>
+                              <span className="text-2xl font-bold text-blue-600">${product.price}</span>
+                              <p className="text-xs text-gray-500">Stock: {product.stock}</p>
+                            </div>
+                            <button
+                              onClick={() => handleViewDetails(product)}
+                              className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            >
+                              <FaEye size={14} />
+                              View Details
+                            </button>
                           </div>
-                        )}
+                        </div>
                       </div>
-                      <div className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-gray-800 text-lg line-clamp-1">{product.name}</h3>
-                            <p className="text-sm text-gray-500 line-clamp-2 mt-1">{product.description}</p>
-                          </div>
-                          <span className="text-xs px-2 py-1 bg-gray-100 rounded-full text-gray-600 ml-2 flex-shrink-0">
-                            {product.category}
-                          </span>
+                    ))}
+                  </div>
+
+                  {/* Pagination Section */}
+                  {totalPages > 1 && (
+                    <div className="mt-8">
+                      <div className="flex justify-center items-center gap-2 flex-wrap">
+                        {/* First Page Button */}
+                        <button
+                          onClick={goToFirstPage}
+                          disabled={currentPage === 1}
+                          className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          <FaAngleDoubleLeft className="text-gray-600" />
+                          <span className="hidden sm:inline">First</span>
+                        </button>
+                        
+                        {/* Previous Page Button */}
+                        <button
+                          onClick={goToPrevPage}
+                          disabled={currentPage === 1}
+                          className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          <FaChevronLeft className="text-gray-600" />
+                          <span className="hidden sm:inline">Prev</span>
+                        </button>
+                        
+                        {/* Page Numbers */}
+                        <div className="flex gap-1">
+                          {getPageNumbers().map((page) => (
+                            <button
+                              key={page}
+                              onClick={() => goToPage(page)}
+                              className={`min-w-[40px] h-10 px-3 py-2 rounded-lg font-medium transition ${
+                                currentPage === page
+                                  ? "bg-blue-600 text-white shadow-md"
+                                  : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          ))}
                         </div>
-                        <div className="flex justify-between items-center mt-3 pt-3 border-t">
-                          <div>
-                            <span className="text-2xl font-bold text-blue-600">${product.price}</span>
-                            <p className="text-xs text-gray-500">Stock: {product.stock}</p>
-                          </div>
-                          <button
-                            onClick={() => handleViewDetails(product)}
-                            className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            <FaEye size={14} />
-                            View Details
-                          </button>
-                        </div>
+                        
+                        {/* Next Page Button */}
+                        <button
+                          onClick={goToNextPage}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          <span className="hidden sm:inline">Next</span>
+                          <FaChevronRight className="text-gray-600" />
+                        </button>
+                        
+                        {/* Last Page Button */}
+                        <button
+                          onClick={goToLastPage}
+                          disabled={currentPage === totalPages}
+                          className="px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                        >
+                          <span className="hidden sm:inline">Last</span>
+                          <FaAngleDoubleRight className="text-gray-600" />
+                        </button>
+                      </div>
+                      
+                      {/* Pagination Info */}
+                      <div className="text-center mt-4 text-sm text-gray-500">
+                        Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(currentPage * ITEMS_PER_PAGE, filteredProducts.length)} of {filteredProducts.length} products
                       </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -679,7 +796,7 @@ export default function AdminProductsPage() {
                   <div className="pt-3 border-t">
                     <div className="flex justify-between items-center">
                       <div>
-                        <span className="text-2xl font-bold text-blue-600">₹{watchedValues.price.toLocaleString()}</span>
+                        <span className="text-2xl font-bold text-blue-600">${watchedValues.price.toLocaleString()}</span>
                       </div>
                       <div className={`px-3 py-1 rounded-full text-sm font-medium ${
                         watchedValues.stock > 0 ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
@@ -696,14 +813,12 @@ export default function AdminProductsPage() {
           // Product Details Modal View
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="grid md:grid-cols-2 gap-8 p-6">
-              {/* Product Image */}
               <div>
                 <div className="relative h-96 rounded-xl overflow-hidden bg-gray-100">
                   <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover" />
                 </div>
               </div>
 
-              {/* Product Details */}
               <div>
                 <div className="mb-4">
                   <span className="text-sm text-blue-600 font-medium mb-2 inline-block">{selectedProduct.category}</span>
