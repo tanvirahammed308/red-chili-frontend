@@ -196,16 +196,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100 p-4">
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded-2xl space-y-5 w-full max-w-md shadow-xl">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex justify-center">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <HiOutlineLogin className="text-4xl text-blue-600" />
+            <div className="bg-red-100 p-3 rounded-full">
+              <HiOutlineLogin className="text-4xl text-red-600" />
             </div>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold text-red-600">
             Welcome Back
           </h1>
           <p className="text-gray-500 text-sm">Login to your account</p>
@@ -221,7 +221,7 @@ export default function LoginPage() {
               placeholder="Email Address"
               className={`pl-10 border ${
                 errors.email ? "border-red-500" : "border-gray-300"
-              } p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
+              } p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-red-500 transition-all`}
               disabled={isLoading}
             />
           </div>
@@ -240,7 +240,7 @@ export default function LoginPage() {
               placeholder="Password"
               className={`pl-10 pr-10 border ${
                 errors.password ? "border-red-500" : "border-gray-300"
-              } p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all`}
+              } p-3 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-red-500 transition-all`}
               disabled={isLoading}
             />
             <button
@@ -260,11 +260,11 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className={`bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg w-full font-semibold transition-all flex items-center justify-center gap-2
+          className={`bg-red-600 text-white py-3 rounded-lg w-full font-semibold transition-all flex items-center justify-center gap-2
             ${
               isLoading
                 ? "opacity-50 cursor-not-allowed"
-                : "hover:from-blue-700 hover:to-indigo-700 transform hover:scale-[1.02]"
+                : "hover:bg-red-700 transform hover:scale-[1.02]"
             }`}
         >
           {isLoading ? (
@@ -292,7 +292,7 @@ export default function LoginPage() {
           type="button"
           onClick={handleGoogleLogin}
           disabled={isGoogleLoading}
-          className="border border-gray-300 text-gray-700 py-3 rounded-lg w-full font-semibold transition-all flex items-center justify-center gap-2 hover:bg-gray-50"
+          className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 hover:bg-gray-50"
         >
           {isGoogleLoading ? (
             <AiOutlineLoading3Quarters className="animate-spin text-xl" />
@@ -310,7 +310,7 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => router.push("/register")}
-            className="text-blue-600 hover:text-blue-700 font-semibold hover:underline inline-flex items-center gap-1"
+            className="text-red-600 hover:text-red-700 font-semibold hover:underline inline-flex items-center gap-1"
           >
             <FaEnvelope className="text-xs" />
             Create account

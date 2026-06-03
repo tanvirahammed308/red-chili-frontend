@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { clearUserData, setCurrentUser } from "@/redux/features/auth/auth.slice";
 import { auth } from "@/lib/firebase";
@@ -23,13 +22,17 @@ import {
   FaStore,
   FaClipboardList,
   FaCog,
+  FaCalendarAlt,
+  FaUtensils
 } from "react-icons/fa";
 import { MdOutlineRestaurantMenu, MdRestaurantMenu } from "react-icons/md";
 import { HiOutlineUserAdd } from "react-icons/hi";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
+import Image from "next/image";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const dispatch = useAppDispatch();
   const { currentUser, loading } = useAppSelector((state) => state.auth);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -149,7 +152,15 @@ export default function Navbar() {
     };
   }, [isSidebarOpen]);
 
-  // Navigation links
+  // Check if link is active
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
+  };
+
+  // Navigation links with active state
   const navLinks = [
     { name: "Home", href: "/", icon: <FaHome className="text-xl" /> },
     { name: "Menu", href: "/menu", icon: <MdRestaurantMenu className="text-xl" /> },
@@ -160,7 +171,7 @@ export default function Navbar() {
   // Admin links
   const adminLinks = [
     { name: "Dashboard", href: "/admin", icon: <FaClipboardList className="text-xl" /> },
-     { name: "Manage Products", href: "/admin/products", icon: <FaStore className="text-xl" /> },
+    { name: "Manage Products", href: "/admin/products", icon: <FaStore className="text-xl" /> },
     { name: "Manage Users", href: "/admin/users", icon: <FaUser className="text-xl" /> },
     { name: "Manage Orders", href: "/admin/orders", icon: <FaShoppingCart className="text-xl" /> },
   ];
@@ -179,21 +190,104 @@ export default function Navbar() {
     router.push(href);
   };
 
+  // Handle reservation
+  const handleReservation = () => {
+    Swal.fire({
+      title: "Table Reservation",
+      html: `
+        <form id="reservation-form" class="space-y-4 text-left">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+            <input type="text" id="name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your name">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+            <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Phone number">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+            <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
+            <select id="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="12:00">12:00 PM</option>
+              <option value="13:00">1:00 PM</option>
+              <option value="14:00">2:00 PM</option>
+              <option value="18:00">6:00 PM</option>
+              <option value="19:00">7:00 PM</option>
+              <option value="20:00">8:00 PM</option>
+              <option value="21:00">9:00 PM</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
+            <select id="guests" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="1">1 Guest</option>
+              <option value="2">2 Guests</option>
+              <option value="3">3 Guests</option>
+              <option value="4">4 Guests</option>
+              <option value="5">5 Guests</option>
+              <option value="6">6 Guests</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Special Requests</label>
+            <textarea id="requests" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Any special requests?"></textarea>
+          </div>
+        </form>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "Book Now",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#3085d6",
+      preConfirm: () => {
+        const name = (document.getElementById("name") as HTMLInputElement)?.value;
+        const email = (document.getElementById("email") as HTMLInputElement)?.value;
+        const phone = (document.getElementById("phone") as HTMLInputElement)?.value;
+        const date = (document.getElementById("date") as HTMLInputElement)?.value;
+        const time = (document.getElementById("time") as HTMLSelectElement)?.value;
+        const guests = (document.getElementById("guests") as HTMLSelectElement)?.value;
+        const requests = (document.getElementById("requests") as HTMLTextAreaElement)?.value;
+        
+        if (!name || !email || !phone || !date) {
+          Swal.showValidationMessage("Please fill all required fields");
+          return false;
+        }
+        
+        return { name, email, phone, date, time, guests, requests };
+      },
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          icon: "success",
+          title: "Reservation Confirmed!",
+          text: `Thank you ${result.value.name}! Your table has been booked for ${result.value.date} at ${result.value.time}.`,
+          confirmButtonColor: "#3085d6",
+        });
+      }
+    });
+  };
+
   // Show loading skeleton on server-side or before mounting
   if (!isMounted) {
     return (
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <nav className="bg-black/50 shadow-lg sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
               <div className="flex items-center gap-2 text-xl font-bold text-gray-300">
-                <MdOutlineRestaurantMenu className="text-blue-300 text-3xl" />
-                <span>QuickBite</span>
+                <div className="w-10 h-10 bg-gray-600 rounded-full animate-pulse"></div>
+                <div className="w-32 h-6 bg-gray-600 rounded animate-pulse"></div>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-20 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
-              <div className="w-24 h-10 bg-gray-200 rounded-lg animate-pulse"></div>
+              <div className="w-20 h-10 bg-gray-600 rounded-lg animate-pulse"></div>
+              <div className="w-24 h-10 bg-gray-600 rounded-lg animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -203,40 +297,62 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <nav className="bg-black/50 shadow-lg sticky top-0 z-50 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo - removed onClick to prevent refresh */}
+            {/* Logo */}
             <div className="flex-shrink-0">
               <button
                 onClick={() => handleNavigation("/")}
-                className="flex items-center gap-2 text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:opacity-80 transition cursor-pointer"
+                className="flex items-center gap-2 hover:opacity-80 transition cursor-pointer"
               >
-                <MdOutlineRestaurantMenu className="text-blue-600" />
-                <span>QuickBite</span>
+                <Image 
+                  src='/images/logo/logo.png' 
+                  alt="QuickBite" 
+                  width={120} 
+                  height={40} 
+                  className="w-32 h-10 object-contain"
+                />
               </button>
             </div>
 
-            {/* Desktop Navigation Links - changed to buttons */}
+            {/* Desktop Navigation Links */}
             <div className="hidden md:flex items-center space-x-8">
               {navLinks.map((link) => (
                 <button
                   key={link.name}
                   onClick={() => handleNavigation(link.href)}
-                  className="flex items-center gap-2 text-gray-700 hover:text-blue-600 transition-colors duration-200 font-medium cursor-pointer"
+                  className={`flex items-center gap-2 transition-colors duration-200 font-medium cursor-pointer ${
+                    isActive(link.href)
+                      ? "text-red-500 border-b-2 border-red-500 pb-1"
+                      : "text-white hover:text-red-500"
+                  }`}
                 >
                   {link.icon}
                   {link.name}
                 </button>
               ))}
+              
+              {/* Reservation Button - Now styled like other nav links */}
+              <button
+                onClick={handleReservation}
+                className={`flex items-center gap-2 transition-colors duration-200 font-medium cursor-pointer ${
+                  pathname === "/reservation"
+                    ? "text-red-500 border-b-2 border-red-500 pb-1"
+                    : "text-white hover:text-red-500"
+                }`}
+              >
+                <FaCalendarAlt />
+                Book a Table
+              </button>
             </div>
 
             {/* Right side - User section */}
             <div className="flex items-center space-x-4">
               {loading ? (
                 <div className="flex items-center gap-2">
-                  <AiOutlineLoading3Quarters className="animate-spin text-blue-600" />
-                  <span className="text-gray-600 hidden sm:inline">Loading...</span>
+                  <AiOutlineLoading3Quarters className="animate-spin text-white" />
+                  <span className="text-white hidden sm:inline">Loading...</span>
                 </div>
               ) : currentUser ? (
                 <div className="relative user-dropdown hidden md:block" ref={dropdownRef}>
@@ -244,7 +360,7 @@ export default function Navbar() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                     className="flex items-center gap-2 focus:outline-none"
                   >
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2 hover:bg-gray-200 transition">
+                    <div className="flex items-center gap-2 bg-white/10 rounded-full px-3 py-2 hover:bg-white/20 transition">
                       {currentUser.avatar ? (
                         <img
                           src={currentUser.avatar}
@@ -252,9 +368,9 @@ export default function Navbar() {
                           className="w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <FaUserCircle className="text-2xl text-gray-600" />
+                        <FaUserCircle className="text-2xl text-white" />
                       )}
-                      <span className="text-sm font-medium text-gray-700 hidden lg:inline">
+                      <span className="text-sm font-medium text-white hidden lg:inline">
                         {currentUser.name?.split(" ")[0] || currentUser.email?.split("@")[0]}
                       </span>
                     </div>
@@ -280,7 +396,9 @@ export default function Navbar() {
                         <button
                           key={link.name}
                           onClick={() => handleNavigation(link.href)}
-                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition text-left"
+                          className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 transition text-left ${
+                            isActive(link.href) ? "text-red-600 bg-red-50" : "text-gray-700"
+                          }`}
                         >
                           {link.icon}
                           {link.name}
@@ -294,7 +412,9 @@ export default function Navbar() {
                             <button
                               key={link.name}
                               onClick={() => handleNavigation(link.href)}
-                              className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition text-left"
+                              className={`flex items-center gap-2 w-full px-4 py-2 text-sm hover:bg-gray-100 transition text-left ${
+                                isActive(link.href) ? "text-red-600 bg-red-50" : "text-gray-700"
+                              }`}
                             >
                               {link.icon}
                               {link.name}
@@ -324,17 +444,18 @@ export default function Navbar() {
                 <div className="hidden md:flex items-center gap-3">
                   <button
                     onClick={() => handleNavigation("/login")}
-                    className="px-4 py-2 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium cursor-pointer"
+                    className="px-4 py-2 text-white border border-red-600 rounded-lg hover:bg-red-600 transition font-medium cursor-pointer"
                   >
                     Login
                   </button>
                 </div>
               )}
 
+              {/* Mobile menu button */}
               <button
                 ref={menuButtonRef}
                 onClick={toggleSidebar}
-                className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition menu-button focus:outline-none"
+                className="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition menu-button focus:outline-none"
                 aria-label="Toggle menu"
               >
                 {isSidebarOpen ? <FaTimes size={24} /> : <FaBars size={24} />}
@@ -386,12 +507,32 @@ export default function Navbar() {
                 <button
                   key={link.name}
                   onClick={() => handleNavigation(link.href)}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                  className={`flex items-center gap-3 w-full px-4 py-3 transition-colors text-left ${
+                    isActive(link.href)
+                      ? "text-red-600 bg-red-50 border-l-4 border-red-600"
+                      : "text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
                   {link.icon}
                   <span>{link.name}</span>
                 </button>
               ))}
+
+              {/* Mobile Reservation Button - Now styled like other nav links */}
+              <button
+                onClick={() => {
+                  closeSidebar();
+                  handleReservation();
+                }}
+                className={`flex items-center gap-3 w-full px-4 py-3 transition-colors text-left ${
+                  pathname === "/reservation"
+                    ? "text-red-600 bg-red-50 border-l-4 border-red-600"
+                    : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <FaCalendarAlt />
+                <span>Book a Table</span>
+              </button>
 
               {isAdmin && (
                 <>
@@ -401,7 +542,11 @@ export default function Navbar() {
                     <button
                       key={link.name}
                       onClick={() => handleNavigation(link.href)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      className={`flex items-center gap-3 w-full px-4 py-3 transition-colors text-left ${
+                        isActive(link.href)
+                          ? "text-red-600 bg-red-50 border-l-4 border-red-600"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
                     >
                       {link.icon}
                       <span>{link.name}</span>
@@ -418,7 +563,11 @@ export default function Navbar() {
                     <button
                       key={link.name}
                       onClick={() => handleNavigation(link.href)}
-                      className="flex items-center gap-3 w-full px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                      className={`flex items-center gap-3 w-full px-4 py-3 transition-colors text-left ${
+                        isActive(link.href)
+                          ? "text-red-600 bg-red-50 border-l-4 border-red-600"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
                     >
                       {link.icon}
                       <span>{link.name}</span>
@@ -437,6 +586,13 @@ export default function Navbar() {
                   >
                     <FaUserCircle className="text-lg" />
                     Login
+                  </button>
+                  <button
+                    onClick={() => handleNavigation("/register")}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition font-medium"
+                  >
+                    <HiOutlineUserAdd className="text-lg" />
+                    Register
                   </button>
                 </div>
               </div>
