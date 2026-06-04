@@ -23,7 +23,9 @@ import {
   FaClipboardList,
   FaCog,
   FaCalendarAlt,
-  FaUtensils
+  FaUtensils,
+  FaInfoCircle,
+  FaEnvelope
 } from "react-icons/fa";
 import { MdOutlineRestaurantMenu, MdRestaurantMenu } from "react-icons/md";
 import { HiOutlineUserAdd } from "react-icons/hi";
@@ -162,11 +164,13 @@ export default function Navbar() {
 
   // Navigation links with active state
   const navLinks = [
-    { name: "Home", href: "/", icon: <FaHome className="text-xl" /> },
-    { name: "Menu", href: "/menu", icon: <MdRestaurantMenu className="text-xl" /> },
-    { name: "Cart", href: "/cart", icon: <FaShoppingCart className="text-xl" /> },
-    { name: "Favorites", href: "/favorites", icon: <FaHeart className="text-xl" /> },
-  ];
+  { name: "Home", href: "/", icon: <FaHome className="text-xl" /> },
+  { name: "Menu", href: "/menu", icon: <MdRestaurantMenu className="text-xl" /> },
+  { name: "Cart", href: "/cart", icon: <FaShoppingCart className="text-xl" /> },
+  
+  { name: "About", href: "/about", icon: <FaInfoCircle className="text-xl" /> },
+  { name: "Contact", href: "/contact", icon: <FaEnvelope className="text-xl" /> },
+];
 
   // Admin links
   const adminLinks = [
