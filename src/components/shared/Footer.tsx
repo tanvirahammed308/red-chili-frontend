@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FaFacebook, FaTwitter, FaInstagram, FaGithub, FaEnvelope, FaPhone, FaMapMarkerAlt, FaClock, FaHeart } from "react-icons/fa";
 import { MdRestaurantMenu, MdDeliveryDining } from "react-icons/md";
 import { HiOutlineUserAdd } from "react-icons/hi";
+import Image from "next/image";
 
 export default function Footer() {
   const router = useRouter();
@@ -29,10 +30,10 @@ export default function Footer() {
 
   // Social media links
   const socialLinks = [
-    { name: "Facebook", icon: <FaFacebook className="text-xl" />, href: "https://facebook.com", color: "hover:text-blue-600" },
-    { name: "Twitter", icon: <FaTwitter className="text-xl" />, href: "https://twitter.com", color: "hover:text-blue-400" },
-    { name: "Instagram", icon: <FaInstagram className="text-xl" />, href: "https://instagram.com", color: "hover:text-pink-600" },
-    { name: "GitHub", icon: <FaGithub className="text-xl" />, href: "https://github.com", color: "hover:text-gray-900" },
+    { name: "Facebook", icon: <FaFacebook className="text-xl" />, href: "https://facebook.com", color: "hover:text-red-600" },
+    { name: "Twitter", icon: <FaTwitter className="text-xl" />, href: "https://twitter.com", color: "hover:text-red-400" },
+    { name: "Instagram", icon: <FaInstagram className="text-xl" />, href: "https://instagram.com", color: "hover:text-red-600" },
+    { name: "GitHub", icon: <FaGithub className="text-xl" />, href: "https://github.com", color: "hover:text-red-600" },
   ];
 
   return (
@@ -44,13 +45,16 @@ export default function Footer() {
           {/* Brand Column */}
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <MdRestaurantMenu className="text-3xl text-blue-500" />
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                QuickBite
-              </h2>
+              <Image 
+                                src='/images/logo/logo.png' 
+                                alt="QuickBite" 
+                                width={120} 
+                                height={40} 
+                                className="w-32 h-10 object-contain"
+                              />
             </div>
             <p className="text-sm text-gray-400 leading-relaxed">
-              QuickBite is your go-to platform for delicious food delivery. 
+              Red chile is your go-to platform for delicious food delivery. 
               Order your favorite meals from the best restaurants in town.
             </p>
             <div className="flex space-x-4">
@@ -77,7 +81,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    className="text-gray-400 hover:text-red-400 transition-colors duration-200 text-sm"
                   >
                     {link.name}
                   </Link>
@@ -94,7 +98,7 @@ export default function Footer() {
                 <li key={link.name}>
                   <Link
                     href={link.href}
-                    className="text-gray-400 hover:text-blue-400 transition-colors duration-200 text-sm"
+                    className="text-gray-400 hover:text-red-400 transition-colors duration-200 text-sm"
                   >
                     {link.name}
                   </Link>
@@ -108,23 +112,23 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-white mb-4">Contact & Hours</h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-sm">
-                <FaMapMarkerAlt className="text-blue-400 mt-0.5" />
+                <FaMapMarkerAlt className="text-red-400 mt-0.5" />
                 <span className="text-gray-400">123 Food Street, Dhaka, Bangladesh</span>
               </li>
               <li className="flex items-center gap-3 text-sm">
-                <FaPhone className="text-blue-400" />
-                <a href="tel:+880123456789" className="text-gray-400 hover:text-blue-400 transition">
+                <FaPhone className="text-red-400" />
+                <a href="tel:+880123456789" className="text-gray-400 hover:text-red-400 transition">
                   +880 1234 56789
                 </a>
               </li>
               <li className="flex items-center gap-3 text-sm">
-                <FaEnvelope className="text-blue-400" />
-                <a href="mailto:support@quickbite.com" className="text-gray-400 hover:text-blue-400 transition">
+                <FaEnvelope className="text-red-400" />
+                <a href="mailto:support@quickbite.com" className="text-gray-400 hover:text-red-400 transition">
                   support@quickbite.com
                 </a>
               </li>
               <li className="flex items-start gap-3 text-sm">
-                <FaClock className="text-blue-400 mt-0.5" />
+                <FaClock className="text-red-400 mt-0.5" />
                 <div className="text-gray-400">
                   <p>Mon - Fri: 10:00 AM - 11:00 PM</p>
                   <p>Sat - Sun: 11:00 AM - 12:00 AM</p>
@@ -138,7 +142,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-8 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <MdDeliveryDining className="text-2xl text-blue-500" />
+              <MdDeliveryDining className="text-2xl text-red-500" />
               <p className="text-gray-400 text-sm">
                 Subscribe to get special offers and updates!
               </p>
@@ -147,11 +151,11 @@ export default function Footer() {
               <input
                 type="email"
                 placeholder="Your email address"
-                className="flex-1 md:w-64 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 md:w-64 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
               />
               <button
                 type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition"
+                className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition"
               >
                 Subscribe
               </button>
@@ -169,10 +173,10 @@ export default function Footer() {
               Made with <FaHeart className="text-red-500 text-xs" /> by QuickBite Team
             </p>
             <div className="flex gap-4 text-xs text-gray-500">
-              <Link href="/sitemap" className="hover:text-blue-400 transition">
+              <Link href="/sitemap" className="hover:text-red-400 transition">
                 Sitemap
               </Link>
-              <Link href="/accessibility" className="hover:text-blue-400 transition">
+              <Link href="/accessibility" className="hover:text-red-400 transition">
                 Accessibility
               </Link>
             </div>
