@@ -12,39 +12,34 @@ const sponsors = [
   {
     id: 1,
     name: "Food Court",
-    logo: "/images/sponsors/sponsor-1.png",
+    logo: "/images/brand/brand1.png",
     slogan: "SLOGAN GOES HERE"
   },
   {
     id: 2,
     name: "Restaurant",
-    logo: "/images/sponsors/sponsor-2.png",
+    logo: "/images/brand/brand2.png",
     slogan: "SLOGAN GOES HERE"
   },
   {
     id: 3,
     name: "Restaurant",
-    logo: "/images/sponsors/sponsor-3.png",
+    logo: "/images/brand/brand3.png",
     slogan: "SLOGAN GOES HERE"
   },
   {
     id: 4,
     name: "Restaurant",
-    logo: "/images/brand/brand_2_1-1.svg",
+    logo: "/images/brand/brand4.png",
     slogan: "SLOGAN GOES HERE"
   },
   {
     id: 5,
     name: "Food Court",
-    logo: "/images/sponsors/sponsor-5.png",
+    logo: "/images/brand/brand5.png",
     slogan: "SLOGAN GOES HERE"
   },
-  {
-    id: 6,
-    name: "Restaurant",
-    logo: "/images/sponsors/sponsor-6.png",
-    slogan: "SLOGAN GOES HERE"
-  }
+  
 ];
 
 export default function SponsorsSection() {
@@ -62,30 +57,14 @@ export default function SponsorsSection() {
           <p className="text-gray-600 max-w-2xl mx-auto">
             Trusted by thousands of restaurants and food brands worldwide
           </p>
-          <div className="w-24 h-1 bg-red-600 mx-auto mt-4"></div>
+          
         </div>
 
-        {/* Sponsors Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
-          {sponsors.map((sponsor) => (
-            <div
-              key={sponsor.id}
-              className="bg-white rounded-2xl p-6 text-center shadow-md hover:shadow-xl transition-all duration-300 group hover:-translate-y-2"
-            >
-              <div className="w-20 h-20 mx-auto mb-4 bg-red-50 rounded-full flex items-center justify-center group-hover:bg-red-100 transition-colors duration-300">
-                <div className="text-3xl font-bold text-red-600">
-                  {sponsor.name.charAt(0)}
-                </div>
-              </div>
-              <h3 className="font-semibold text-gray-800 mb-1">{sponsor.name}</h3>
-              <p className="text-xs text-gray-500">{sponsor.slogan}</p>
-            </div>
-          ))}
-        </div>
+        
 
-        {/* Auto-moving Swiper Slider */}
+        {/* Auto-moving Swiper Slider with Images */}
         <div className="relative mt-8 pt-8 border-t border-red-200">
-          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full text-sm">
+          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-4 py-1 rounded-full text-sm whitespace-nowrap">
             Trusted Partners
           </div>
           
@@ -113,11 +92,33 @@ export default function SponsorsSection() {
             {[...sponsors, ...sponsors].map((sponsor, index) => (
               <SwiperSlide key={index}>
                 <div className="text-center py-4">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                      <span className="text-red-600 font-bold text-lg">
-                        {sponsor.name.charAt(0)}
-                      </span>
+                  <div className="flex items-center justify-center gap-3 bg-white rounded-lg px-4 py-3 shadow-sm">
+                    {/* Sponsor Logo in Slider */}
+                    <div className="relative w-10 h-10 bg-red-100 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {sponsor.logo ? (
+                        <Image
+                          src={sponsor.logo}
+                          alt={sponsor.name}
+                          width={40}
+                          height={40}
+                          className="object-contain p-1"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = "none";
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const fallback = document.createElement("div");
+                              fallback.className = "text-red-600 font-bold";
+                              fallback.textContent = sponsor.name.charAt(0);
+                              parent.appendChild(fallback);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <span className="text-red-600 font-bold">
+                          {sponsor.name.charAt(0)}
+                        </span>
+                      )}
                     </div>
                     <div className="text-left">
                       <p className="font-semibold text-gray-800 text-sm">{sponsor.name}</p>
