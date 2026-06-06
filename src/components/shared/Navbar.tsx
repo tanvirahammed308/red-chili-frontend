@@ -1,3 +1,4 @@
+// components/shared/Navbar.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -164,13 +165,12 @@ export default function Navbar() {
 
   // Navigation links with active state
   const navLinks = [
-  { name: "Home", href: "/", icon: <FaHome className="text-xl" /> },
-  { name: "Menu", href: "/menu", icon: <MdRestaurantMenu className="text-xl" /> },
-  { name: "Cart", href: "/cart", icon: <FaShoppingCart className="text-xl" /> },
-  
-  { name: "About", href: "/about", icon: <FaInfoCircle className="text-xl" /> },
-  { name: "Contact", href: "/contact", icon: <FaEnvelope className="text-xl" /> },
-];
+    { name: "Home", href: "/", icon: <FaHome className="text-xl" /> },
+    { name: "Menu", href: "/menu", icon: <MdRestaurantMenu className="text-xl" /> },
+    { name: "Cart", href: "/cart", icon: <FaShoppingCart className="text-xl" /> },
+    { name: "About", href: "/about", icon: <FaInfoCircle className="text-xl" /> },
+    { name: "Contact", href: "/contact", icon: <FaEnvelope className="text-xl" /> },
+  ];
 
   // Admin links
   const adminLinks = [
@@ -194,7 +194,7 @@ export default function Navbar() {
     router.push(href);
   };
 
-  // Handle reservation
+  // Handle reservation - Fixed with Red theme
   const handleReservation = () => {
     Swal.fire({
       title: "Table Reservation",
@@ -202,23 +202,23 @@ export default function Navbar() {
         <form id="reservation-form" class="space-y-4 text-left">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-            <input type="text" id="name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Your name">
+            <input type="text" id="name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Your name">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="your@email.com">
+            <input type="email" id="email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="your@email.com">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-            <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Phone number">
+            <input type="tel" id="phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Phone number">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Time</label>
-            <select id="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
               <option value="12:00">12:00 PM</option>
               <option value="13:00">1:00 PM</option>
               <option value="14:00">2:00 PM</option>
@@ -230,7 +230,7 @@ export default function Navbar() {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
-            <select id="guests" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select id="guests" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500">
               <option value="1">1 Guest</option>
               <option value="2">2 Guests</option>
               <option value="3">3 Guests</option>
@@ -241,14 +241,21 @@ export default function Navbar() {
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Special Requests</label>
-            <textarea id="requests" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Any special requests?"></textarea>
+            <textarea id="requests" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" placeholder="Any special requests?"></textarea>
           </div>
         </form>
       `,
       showCancelButton: true,
       confirmButtonText: "Book Now",
       cancelButtonText: "Cancel",
-      confirmButtonColor: "#3085d6",
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      background: "#ffffff",
+      customClass: {
+        title: "text-red-600 text-2xl font-bold",
+        confirmButton: "bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg",
+        cancelButton: "bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg",
+      },
       preConfirm: () => {
         const name = (document.getElementById("name") as HTMLInputElement)?.value;
         const email = (document.getElementById("email") as HTMLInputElement)?.value;
@@ -271,7 +278,9 @@ export default function Navbar() {
           icon: "success",
           title: "Reservation Confirmed!",
           text: `Thank you ${result.value.name}! Your table has been booked for ${result.value.date} at ${result.value.time}.`,
-          confirmButtonColor: "#3085d6",
+          confirmButtonColor: "#dc2626",
+          background: "#ffffff",
+          iconColor: "#dc2626",
         });
       }
     });
@@ -312,7 +321,7 @@ export default function Navbar() {
               >
                 <Image 
                   src='/images/logo/logo.png' 
-                  alt="QuickBite" 
+                  alt="Red Chili" 
                   width={120} 
                   height={40} 
                   className="w-32 h-10 object-contain"
@@ -337,7 +346,7 @@ export default function Navbar() {
                 </button>
               ))}
               
-              {/* Reservation Button - Now styled like other nav links */}
+              {/* Reservation Button */}
               <button
                 onClick={handleReservation}
                 className={`flex items-center gap-2 transition-colors duration-200 font-medium cursor-pointer ${
@@ -482,7 +491,7 @@ export default function Navbar() {
             className="fixed left-0 top-14 h-full w-80 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-out overflow-y-auto"
           >
             {currentUser && (
-              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-red-50 to-red-50">
                 <div className="flex items-center gap-3">
                   {currentUser.avatar ? (
                     <img
@@ -522,7 +531,7 @@ export default function Navbar() {
                 </button>
               ))}
 
-              {/* Mobile Reservation Button - Now styled like other nav links */}
+              {/* Mobile Reservation Button */}
               <button
                 onClick={() => {
                   closeSidebar();
@@ -586,14 +595,14 @@ export default function Navbar() {
                 <div className="px-4 space-y-3">
                   <button
                     onClick={() => handleNavigation("/login")}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 text-blue-600 border border-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 text-red-600 border border-red-600 rounded-lg hover:bg-red-50 transition font-medium"
                   >
                     <FaUserCircle className="text-lg" />
                     Login
                   </button>
                   <button
                     onClick={() => handleNavigation("/register")}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:opacity-90 transition font-medium"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium"
                   >
                     <HiOutlineUserAdd className="text-lg" />
                     Register
@@ -624,7 +633,7 @@ export default function Navbar() {
             <div className="border-t border-gray-100 pt-4 pb-6 bg-gray-50">
               <div className="px-4">
                 <p className="text-xs text-gray-400 text-center">
-                  &copy; 2024 QuickBite. All rights reserved.
+                  &copy; 2024 Red Chili. All rights reserved.
                 </p>
               </div>
             </div>
