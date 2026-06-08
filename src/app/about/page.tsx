@@ -59,7 +59,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 mb-5">
       {/* Hero Section */}
       <div className="relative h-[400px] flex items-center justify-center bg-gradient-to-r from-red-600 to-red-800">
         <div className="absolute inset-0 bg-black/50"></div>
@@ -200,7 +200,7 @@ export default function AboutPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gray-900 py-16">
+      <div className="bg-gray-700 py-16">
         <div className="max-w-4xl mx-auto text-center px-4">
           <h2 className="text-3xl font-bold text-white mb-4">Ready to Order?</h2>
           <p className="text-gray-300 mb-8">
