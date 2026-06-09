@@ -5,7 +5,16 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, Navigation } from "swiper/modules";
 import Image from "next/image";
 import Link from "next/link";
-import { FaShoppingCart, FaArrowRight, FaStar, FaTruck, FaClock, FaUtensils } from "react-icons/fa";
+import { 
+  FaShoppingCart, 
+  FaArrowRight, 
+  FaStar, 
+  FaTruck, 
+  FaClock, 
+  FaUtensils,
+  FaChevronLeft,
+  FaChevronRight
+} from "react-icons/fa";
 import { MdRestaurantMenu } from "react-icons/md";
 
 import "swiper/css";
@@ -93,18 +102,20 @@ export default function HeroSection() {
 
   return (
     <section className="relative w-full h-screen overflow-hidden">
-      {/* Navigation Buttons */}
+      {/* Navigation Buttons with Icons */}
       <button
         ref={prevRef}
         className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 cursor-pointer"
+        aria-label="Previous slide"
       >
-        ❮
+        <FaChevronLeft size={20} />
       </button>
       <button
         ref={nextRef}
         className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 cursor-pointer"
+        aria-label="Next slide"
       >
-        ❯
+        <FaChevronRight size={20} />
       </button>
 
       <Swiper
@@ -181,26 +192,28 @@ export default function HeroSection() {
                     </div>
                   </div>
 
-                  {/* Price - ABOVE BUTTONS */}
+                  {/* Price */}
                   <div className="text-center mb-4">
                     <span className="text-3xl font-bold text-red-500">{slide.price}</span>
                     <span className="text-gray-300 text-sm ml-1">+ free delivery</span>
                   </div>
 
-                  {/* Buttons */}
+                  {/* Buttons with Icons */}
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <Link
                       href="/order-now"
-                      className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition"
+                      className="flex items-center gap-2 px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-sm transition duration-300 hover:scale-105"
                     >
-                      <FaShoppingCart size={16} /> Order Now
+                      <FaShoppingCart size={16} />
+                      Order Now
                     </Link>
                     <Link
                       href="/menu"
-                      className="flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold text-sm transition group"
+                      className="flex items-center gap-2 px-5 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold text-sm transition duration-300 group"
                     >
-                      <MdRestaurantMenu size={16} /> View Menu
-                      <FaArrowRight className="group-hover:translate-x-1 transition" size={12} />
+                      <MdRestaurantMenu size={16} />
+                      View Menu
+                      <FaArrowRight className="group-hover:translate-x-1 transition-transform" size={12} />
                     </Link>
                   </div>
                 </div>
