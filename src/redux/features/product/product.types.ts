@@ -1,12 +1,16 @@
+import { productCategories, ProductCategory } from "@/schemas/product.schema";
 
 
+export { productCategories };
+export type { ProductCategory };
+  
 export interface IProduct {
   _id: string;
   name: string;
   description: string;
   price: number;
   image: string;
-  category: string;
+  category: ProductCategory;
   stock: number;
   createdAt: string;
   updatedAt: string;
@@ -24,7 +28,7 @@ export interface ICreateProductData {
   name: string;
   description: string;
   price: number;
-  category: string;
+  category: ProductCategory;
   stock: number;
   image?: File;
 }
@@ -33,7 +37,7 @@ export interface IUpdateProductData {
   name?: string;
   description?: string;
   price?: number;
-  category?: string;
+  category?: ProductCategory;
   stock?: number;
   image?: File;
 }
