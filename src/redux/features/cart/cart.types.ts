@@ -1,4 +1,4 @@
-// redux/features/cart/cart.types.ts
+
 
 export interface ICartItem {
   product: string;
