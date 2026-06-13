@@ -8,6 +8,14 @@ import { IProduct } from "@/redux/features/product/product.types";
 import { FiShoppingCart, FiX } from "react-icons/fi";
 import { FaPlus, FaMinus, FaEye } from "react-icons/fa";
 import { AppDispatch, RootState } from "@/redux/store";
+import {
+  getCart,
+  addToCart,
+  updateCartItem,
+  removeCartItem,
+  clearCart,
+} from "@/redux/features/cart/cart.slice";
+import Swal from "sweetalert2";
 
 interface MenuSectionProps {
   limit?: number;
@@ -15,11 +23,6 @@ interface MenuSectionProps {
   subtitle?: string;
   showCart?: boolean;
 }
-
-type CartItem = {
-  product: IProduct;
-  quantity: number;
-};
 
 export default function MenuSection({
   limit,
@@ -33,23 +36,30 @@ export default function MenuSection({
   const { products, loading, error } = useSelector(
     (state: RootState) => state.product
   );
+  const { cart, loading: cartLoading } = useSelector(
+    (state: RootState) => state.cart
+  );
+  const { currentUser } = useSelector((state: RootState) => state.auth);
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [showCartSidebar, setShowCartSidebar] = useState(false);
 
   useEffect(() => {
     dispatch(getAllProducts());
-  }, [dispatch]);
+    if (currentUser) {
+      dispatch(getCart());
+    }
+  }, [dispatch, currentUser]);
 
   // Group products by category
-  const groupedProducts = products.reduce<
-    Record<string, IProduct[]>
-  >((acc, product) => {
-    const category = product.category ?? "Other";
-    (acc[category] = acc[category] || []).push(product);
-    return acc;
-  }, {} as Record<string, IProduct[]>);
+  const groupedProducts = products.reduce<Record<string, IProduct[]>>(
+    (acc, product) => {
+      const category = product.category ?? "Other";
+      (acc[category] = acc[category] || []).push(product);
+      return acc;
+    },
+    {}
+  );
 
   const availableCategories = Object.keys(groupedProducts).sort();
 
@@ -72,62 +82,139 @@ export default function MenuSection({
     }));
   };
 
-  const addToCart = (product: IProduct) => {
+  const handleAddToCart = async (product: IProduct) => {
+    if (!currentUser) {
+      Swal.fire({
+        icon: "info",
+        title: "Login Required",
+        text: "Please login to add items to your cart",
+        confirmButtonColor: "#dc2626",
+        showCancelButton: true,
+        cancelButtonText: "Cancel",
+        confirmButtonText: "Login",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.push("/login");
+        }
+      });
+      return;
+    }
+
     const quantity = quantities[product._id] || 1;
     if (quantity === 0) return;
 
-    const existingItem = cart.find(
-      (item) => item.product._id === product._id
-    );
+    try {
+      await dispatch(addToCart({ productId: product._id, quantity })).unwrap();
+      setQuantities((prev) => ({ ...prev, [product._id]: 0 }));
+      Swal.fire({
+        icon: "success",
+        title: "Added to Cart!",
+        text: `${quantity} × ${product.name} added to your cart`,
+        timer: 1500,
+        showConfirmButton: false,
+        position: "bottom-end",
+        toast: true,
+      });
+    } catch (error: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error || "Failed to add to cart",
+        confirmButtonColor: "#dc2626",
+      });
+    }
+  };
 
-    if (existingItem) {
-      setCart(
-        cart.map((item) =>
-          item.product._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        )
-      );
-    } else {
-      setCart([...cart, { product, quantity }]);
+  const handleUpdateCartQuantity = async (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      handleRemoveFromCart(productId);
+      return;
     }
 
-    setQuantities((prev) => ({ ...prev, [product._id]: 0 }));
+    try {
+      await dispatch(updateCartItem({ productId, quantity: newQuantity })).unwrap();
+    } catch (error: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error || "Failed to update quantity",
+        confirmButtonColor: "#dc2626",
+      });
+    }
   };
 
-  const updateCartQuantity = (productId: string, change: number) => {
-    setCart(
-      cart
-        .map((item) => {
-          if (item.product._id === productId) {
-            const newQuantity = item.quantity + change;
-            if (newQuantity <= 0) return null;
-            return { ...item, quantity: newQuantity };
-          }
-          return item;
-        })
-        .filter(Boolean) as CartItem[]
-    );
+  const handleRemoveFromCart = async (productId: string) => {
+    const result = await Swal.fire({
+      title: "Remove Item?",
+      text: "Are you sure you want to remove this item?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Remove",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await dispatch(removeCartItem(productId)).unwrap();
+        Swal.fire({
+          icon: "success",
+          title: "Removed!",
+          text: "Item removed from cart",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } catch (error: any) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error || "Failed to remove item",
+          confirmButtonColor: "#dc2626",
+        });
+      }
+    }
   };
 
-  const removeFromCart = (productId: string) => {
-    setCart(cart.filter((item) => item.product._id !== productId));
+  const handleClearCart = async () => {
+    const result = await Swal.fire({
+      title: "Clear Cart?",
+      text: "Are you sure you want to clear your entire cart?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Yes, Clear All",
+      cancelButtonText: "Cancel",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await dispatch(clearCart()).unwrap();
+        Swal.fire({
+          icon: "success",
+          title: "Cleared!",
+          text: "Your cart has been cleared",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      } catch (error: any) {
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: error || "Failed to clear cart",
+          confirmButtonColor: "#dc2626",
+        });
+      }
+    }
   };
 
   const handleViewDetails = (productId: string) => {
     router.push(`/products/${productId}`);
   };
 
-  const cartTotal = cart.reduce(
-    (sum, item) =>
-      sum + getBasePrice(item.product) * item.quantity,
-    0
-  );
-
-  const cartItemCount = cart.reduce(
-    (sum, item) => sum + item.quantity,
-    0
-  );
+  const cartTotal = cart?.totalPrice || 0;
+  const cartItemCount = cart?.totalItems || 0;
 
   if (loading) {
     return (
@@ -154,7 +241,6 @@ export default function MenuSection({
   return (
     <section className="bg-gray-50 py-16">
       <div className="container mx-auto px-4">
-
         {/* HERO */}
         <div
           className="relative h-80 md:h-96 bg-cover bg-center rounded-2xl overflow-hidden mb-12 shadow-lg"
@@ -197,13 +283,13 @@ export default function MenuSection({
 
                 {/* GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {groupedProducts[category].map((product) => (
+                  {groupedProducts[category].slice(0, limit).map((product) => (
                     <div
                       key={product._id}
                       className="bg-white border-2 border-gray-200 rounded-xl hover:border-red-300 hover:shadow-lg transition-all overflow-hidden group"
                     >
                       {/* IMAGE */}
-                      <div 
+                      <div
                         className="h-44 bg-gray-100 border-b border-gray-200 relative cursor-pointer"
                         onClick={() => handleViewDetails(product._id)}
                       >
@@ -274,7 +360,7 @@ export default function MenuSection({
                               View
                             </button>
                             <button
-                              onClick={() => addToCart(product)}
+                              onClick={() => handleAddToCart(product)}
                               className="px-3 py-1 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
                             >
                               Add
@@ -329,7 +415,7 @@ export default function MenuSection({
 
             {/* Cart Items */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {cart.length === 0 ? (
+              {!cart || cart.items.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="text-6xl mb-4">🛒</div>
                   <p className="text-gray-500">Your cart is empty</p>
@@ -341,34 +427,34 @@ export default function MenuSection({
                   </button>
                 </div>
               ) : (
-                cart.map((item) => (
-                  <div key={item.product._id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
+                cart.items.map((item) => (
+                  <div key={item.product} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
                     <img
-                      src={item.product.image}
-                      alt={item.product.name}
+                      src={item.image}
+                      alt={item.name}
                       className="w-16 h-16 rounded-lg object-cover"
                     />
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{item.product.name}</h4>
+                      <h4 className="font-semibold text-gray-800">{item.name}</h4>
                       <p className="text-red-600 font-bold text-sm">
-                        ${getBasePrice(item.product).toFixed(2)}
+                        ${item.price.toFixed(2)}
                       </p>
                       <div className="flex items-center gap-3 mt-1">
                         <button
-                          onClick={() => updateCartQuantity(item.product._id, -1)}
+                          onClick={() => handleUpdateCartQuantity(item.product, item.quantity - 1)}
                           className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
                         >
                           <FaMinus size={10} />
                         </button>
                         <span className="text-sm font-medium">{item.quantity}</span>
                         <button
-                          onClick={() => updateCartQuantity(item.product._id, 1)}
+                          onClick={() => handleUpdateCartQuantity(item.product, item.quantity + 1)}
                           className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
                         >
                           <FaPlus size={10} />
                         </button>
                         <button
-                          onClick={() => removeFromCart(item.product._id)}
+                          onClick={() => handleRemoveFromCart(item.product)}
                           className="text-red-500 text-xs hover:underline ml-auto"
                         >
                           Remove
@@ -381,7 +467,7 @@ export default function MenuSection({
             </div>
 
             {/* Footer */}
-            {cart.length > 0 && (
+            {cart && cart.items.length > 0 && (
               <div className="p-4 border-t bg-gray-50">
                 <div className="flex justify-between mb-3">
                   <span className="font-semibold">Subtotal:</span>
@@ -391,8 +477,17 @@ export default function MenuSection({
                   <span>Delivery Fee:</span>
                   <span>Free</span>
                 </div>
-                <button className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition">
+                <button
+                  onClick={() => router.push("/checkout")}
+                  className="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition"
+                >
                   Proceed to Checkout
+                </button>
+                <button
+                  onClick={handleClearCart}
+                  className="w-full mt-2 text-red-600 text-sm hover:underline"
+                >
+                  Clear Cart
                 </button>
               </div>
             )}
