@@ -11,42 +11,28 @@ import {
   updateCartItem,
   removeCartItem,
   clearCart,
-  updateLocalCartItem,
 } from "@/redux/features/cart/cart.slice";
 import { FaTrash, FaArrowLeft, FaPlus, FaMinus, FaLock, FaTruck, FaShieldAlt } from "react-icons/fa";
 import Swal from "sweetalert2";
-import type { ICart, ICartItem } from "@/redux/features/cart/cart.types";
+import type { ICartItem } from "@/redux/features/cart/cart.types";
 
 export default function CartPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   
-  const cartState = useAppSelector((state) => state.cart) as {
-    cart: ICart | null;
-    loading: boolean;
-    error: string | null;
-  };
-  
-  const authState = useAppSelector((state) => state.auth) as {
-    currentUser: any;
-    loading: boolean;
-  };
-  
-  const { cart, loading: cartLoading } = cartState;
-  const { currentUser, loading: authLoading } = authState;
+  const { cart } = useAppSelector((state) => state.cart);
+  const { currentUser, loading: authLoading } = useAppSelector((state) => state.auth);
   
   const [updatingItems, setUpdatingItems] = useState<Record<string, boolean>>({});
-  const [isPageReady, setIsPageReady] = useState(false);
-  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!authLoading) {
       if (!currentUser) {
         router.replace("/login?redirect=/cart");
       } else {
-        setIsPageReady(true);
         dispatch(getCart()).finally(() => {
-          setIsInitialLoading(false);
+          setIsLoading(false);
         });
       }
     }
@@ -58,20 +44,12 @@ export default function CartPage() {
       return;
     }
 
-    // Update UI immediately for better UX
-    dispatch(updateLocalCartItem({ productId, quantity: newQuantity }));
-    
     setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
-      await dispatch(updateCartItem({ 
-        productId: productId, 
-        quantity: newQuantity 
-      })).unwrap();
+      await dispatch(updateCartItem({ productId, quantity: newQuantity })).unwrap();
+      await dispatch(getCart()).unwrap();
     } catch (error: any) {
-      // Revert on error
-      const oldQuantity = cart?.items.find(item => item.product === productId)?.quantity || newQuantity;
-      dispatch(updateLocalCartItem({ productId, quantity: oldQuantity }));
-      
+      console.error("Update error:", error);
       Swal.fire({
         icon: "error",
         title: "Update Failed",
@@ -96,21 +74,9 @@ export default function CartPage() {
     });
 
     if (result.isConfirmed) {
-      // Remove from UI immediately
-      const updatedItems = cart?.items.filter(item => item.product !== productId) || [];
-      const updatedCart = {
-        ...cart,
-        items: updatedItems,
-        totalItems: updatedItems.reduce((sum, item) => sum + item.quantity, 0),
-        totalPrice: updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0),
-      };
-      
-      // Update local state immediately
-      dispatch({ type: 'cart/removeLocalItem', payload: updatedCart });
-      
       try {
         await dispatch(removeCartItem(productId)).unwrap();
-        
+        await dispatch(getCart()).unwrap();
         Swal.fire({
           icon: "success",
           title: "Removed!",
@@ -118,8 +84,7 @@ export default function CartPage() {
           showConfirmButton: false,
         });
       } catch (error: any) {
-        // Revert on error - refetch cart
-        await dispatch(getCart());
+        console.error("Remove error:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -143,18 +108,9 @@ export default function CartPage() {
     });
 
     if (result.isConfirmed) {
-      // Clear UI immediately
-      const emptyCart = {
-        ...cart,
-        items: [],
-        totalItems: 0,
-        totalPrice: 0,
-      };
-      dispatch({ type: 'cart/clearLocalCart', payload: emptyCart });
-      
       try {
         await dispatch(clearCart()).unwrap();
-        
+        await dispatch(getCart()).unwrap();
         Swal.fire({
           icon: "success",
           title: "Cleared!",
@@ -162,8 +118,7 @@ export default function CartPage() {
           showConfirmButton: false,
         });
       } catch (error: any) {
-        // Revert on error - refetch cart
-        await dispatch(getCart());
+        console.error("Clear error:", error);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -182,8 +137,7 @@ export default function CartPage() {
     router.push("/menu");
   };
 
-  // Only show full page loading on initial load
-  if (authLoading || !isPageReady || isInitialLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
@@ -208,15 +162,13 @@ export default function CartPage() {
             <div className="text-8xl mb-6">🛒</div>
             <h2 className="text-3xl font-bold text-gray-800 mb-3">Your cart is empty</h2>
             <p className="text-gray-500 mb-8">Looks like you haven't added any items yet</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/menu"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition duration-300"
-              >
-                <FaArrowLeft />
-                Browse Menu
-              </Link>
-            </div>
+            <Link
+              href="/menu"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-xl font-semibold hover:bg-red-700 transition duration-300"
+            >
+              <FaArrowLeft />
+              Browse Menu
+            </Link>
           </div>
         </div>
       </div>
@@ -263,13 +215,17 @@ export default function CartPage() {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {cart.items.map((item: ICartItem) => {
-              const itemPrice = typeof item.price === 'number' ? item.price : 0;
-              const itemQuantity = typeof item.quantity === 'number' ? item.quantity : 0;
+              const itemPrice = item.price;
+              const itemQuantity = item.quantity;
               const itemTotal = itemPrice * itemQuantity;
+              // Convert ObjectId to string for key
+              const productId = typeof item.product === 'object' 
+                ? String(item.product._id || item.product) 
+                : String(item.product);
               
               return (
                 <div
-                  key={item.product}
+                  key={productId}
                   className="bg-white rounded-2xl shadow-md p-4 flex gap-4 hover:shadow-xl transition-all duration-300 group"
                 >
                   <div className="relative w-24 h-24 sm:w-28 sm:h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
@@ -297,8 +253,9 @@ export default function CartPage() {
                         </p>
                       </div>
                       <button
-                        onClick={() => handleRemoveItem(item.product)}
-                        className="text-gray-400 hover:text-red-500 transition self-start"
+                        onClick={() => handleRemoveItem(productId)}
+                        disabled={updatingItems[productId]}
+                        className="text-gray-400 hover:text-red-500 transition self-start disabled:opacity-50"
                       >
                         <FaTrash size={16} />
                       </button>
@@ -307,22 +264,22 @@ export default function CartPage() {
                     <div className="flex items-center justify-between mt-4">
                       <div className="flex items-center gap-3">
                         <button
-                          onClick={() => handleUpdateQuantity(item.product, itemQuantity - 1)}
-                          disabled={updatingItems[item.product]}
+                          onClick={() => handleUpdateQuantity(productId, itemQuantity - 1)}
+                          disabled={updatingItems[productId]}
                           className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-red-400 hover:bg-red-50 disabled:opacity-50 transition-all duration-200"
                         >
                           <FaMinus size={12} className="text-gray-600" />
                         </button>
                         <span className="text-gray-800 font-semibold w-8 text-center">
-                          {updatingItems[item.product] ? (
+                          {updatingItems[productId] ? (
                             <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
                           ) : (
                             itemQuantity
                           )}
                         </span>
                         <button
-                          onClick={() => handleUpdateQuantity(item.product, itemQuantity + 1)}
-                          disabled={updatingItems[item.product]}
+                          onClick={() => handleUpdateQuantity(productId, itemQuantity + 1)}
+                          disabled={updatingItems[productId]}
                           className="w-8 h-8 rounded-full border-2 border-gray-300 flex items-center justify-center hover:border-red-400 hover:bg-red-50 disabled:opacity-50 transition-all duration-200"
                         >
                           <FaPlus size={12} className="text-gray-600" />

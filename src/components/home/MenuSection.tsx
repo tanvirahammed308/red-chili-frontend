@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { getAllProducts } from "@/redux/features/product/product.slice";
 import { IProduct } from "@/redux/features/product/product.types";
 import { FiShoppingCart, FiX } from "react-icons/fi";
 import { FaPlus, FaMinus, FaEye } from "react-icons/fa";
-import { AppDispatch, RootState } from "@/redux/store";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import {
   getCart,
   addToCart,
   updateCartItem,
   removeCartItem,
   clearCart,
+  updateLocalCartItem,
 } from "@/redux/features/cart/cart.slice";
 import Swal from "sweetalert2";
+import type { ICart, ICartItem } from "@/redux/features/cart/cart.types";
 
 interface MenuSectionProps {
   limit?: number;
@@ -31,18 +32,19 @@ export default function MenuSection({
   showCart = true,
 }: MenuSectionProps) {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
 
-  const { products, loading, error } = useSelector(
-    (state: RootState) => state.product
+  const { products, loading, error } = useAppSelector(
+    (state) => state.product
   );
-  const { cart, loading: cartLoading } = useSelector(
-    (state: RootState) => state.cart
+  const { cart } = useAppSelector(
+    (state) => state.cart
   );
-  const { currentUser } = useSelector((state: RootState) => state.auth);
+  const { currentUser } = useAppSelector((state) => state.auth);
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [showCartSidebar, setShowCartSidebar] = useState(false);
+  const [updatingItems, setUpdatingItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     dispatch(getAllProducts());
@@ -68,11 +70,6 @@ export default function MenuSection({
       return "$15.00 - $25.00";
     }
     return `$${product.price.toFixed(2)}`;
-  };
-
-  const getBasePrice = (product: IProduct) => {
-    if (product.name === "Slow Cooker Chile") return 15;
-    return product.price;
   };
 
   const updateQuantity = (productId: string, change: number) => {
@@ -131,15 +128,23 @@ export default function MenuSection({
       return;
     }
 
+    // Update UI immediately
+    dispatch(updateLocalCartItem({ productId, quantity: newQuantity }));
+    
+    setUpdatingItems((prev) => ({ ...prev, [productId]: true }));
     try {
       await dispatch(updateCartItem({ productId, quantity: newQuantity })).unwrap();
     } catch (error: any) {
+      // Revert on error - refetch cart
+      await dispatch(getCart());
       Swal.fire({
         icon: "error",
         title: "Error",
         text: error || "Failed to update quantity",
         confirmButtonColor: "#dc2626",
       });
+    } finally {
+      setUpdatingItems((prev) => ({ ...prev, [productId]: false }));
     }
   };
 
@@ -161,11 +166,12 @@ export default function MenuSection({
         Swal.fire({
           icon: "success",
           title: "Removed!",
-          text: "Item removed from cart",
           timer: 1500,
           showConfirmButton: false,
         });
       } catch (error: any) {
+        // Revert on error - refetch cart
+        await dispatch(getCart());
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -194,11 +200,12 @@ export default function MenuSection({
         Swal.fire({
           icon: "success",
           title: "Cleared!",
-          text: "Your cart has been cleared",
           timer: 1500,
           showConfirmButton: false,
         });
       } catch (error: any) {
+        // Revert on error - refetch cart
+        await dispatch(getCart());
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -403,7 +410,7 @@ export default function MenuSection({
             <div className="p-4 border-b flex justify-between items-center bg-red-600 text-white rounded-tl-2xl">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <FiShoppingCart />
-                Your Cart
+                Your Cart ({cartItemCount})
               </h2>
               <button
                 onClick={() => setShowCartSidebar(false)}
@@ -427,7 +434,7 @@ export default function MenuSection({
                   </button>
                 </div>
               ) : (
-                cart.items.map((item) => (
+                cart.items.map((item: ICartItem) => (
                   <div key={item.product} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
                     <img
                       src={item.image}
@@ -442,14 +449,22 @@ export default function MenuSection({
                       <div className="flex items-center gap-3 mt-1">
                         <button
                           onClick={() => handleUpdateCartQuantity(item.product, item.quantity - 1)}
-                          className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          disabled={updatingItems[item.product]}
+                          className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
                         >
                           <FaMinus size={10} />
                         </button>
-                        <span className="text-sm font-medium">{item.quantity}</span>
+                        <span className="text-sm font-medium">
+                          {updatingItems[item.product] ? (
+                            <div className="w-3 h-3 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            item.quantity
+                          )}
+                        </span>
                         <button
                           onClick={() => handleUpdateCartQuantity(item.product, item.quantity + 1)}
-                          className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100"
+                          disabled={updatingItems[item.product]}
+                          className="w-6 h-6 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50"
                         >
                           <FaPlus size={10} />
                         </button>

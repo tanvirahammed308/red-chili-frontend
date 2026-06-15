@@ -130,6 +130,12 @@ const cartSlice = createSlice({
         }
       }
     },
+    removeLocalItem: (state, action: PayloadAction<ICart>) => {
+      state.cart = action.payload;
+    },
+    clearLocalCart: (state, action: PayloadAction<ICart>) => {
+      state.cart = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -205,8 +211,14 @@ const cartSlice = createSlice({
   },
 });
 
-// Export actions
-export const { clearCartError, resetCart, updateLocalCartItem } = cartSlice.actions;
+// Export actions - MAKE SURE to export all of them
+export const { 
+  clearCartError, 
+  resetCart, 
+  updateLocalCartItem,
+  removeLocalItem,
+  clearLocalCart 
+} = cartSlice.actions;
 
 // Export reducer
 export default cartSlice.reducer;
