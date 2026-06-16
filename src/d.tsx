@@ -38,35 +38,6 @@ export default function CartPage() {
     }
   }, [currentUser, authLoading, dispatch, router]);
 
-  // Helper function to safely get product ID as string
-  const getProductId = (item: ICartItem): string => {
-    if (!item.product) return `item-${Date.now()}-${Math.random()}`;
-    
-    // If product is already a string, return it
-    if (typeof item.product === 'string') {
-      return item.product;
-    }
-    
-    // If product is an object with _id
-    if (typeof item.product === 'object' && item.product !== null) {
-      // Check if it has _id property
-      const productObj = item.product as any;
-      if (productObj._id && typeof productObj._id === 'string') {
-        return productObj._id;
-      }
-      if (productObj.id && typeof productObj.id === 'string') {
-        return productObj.id;
-      }
-      // If it's a MongoDB ObjectId with toString method
-      if (typeof productObj.toString === 'function') {
-        return productObj.toString();
-      }
-    }
-    
-    // Fallback: use name + index to create unique key
-    return `${item.name}-${Date.now()}-${Math.random()}`;
-  };
-
   const handleUpdateQuantity = async (productId: string, newQuantity: number) => {
     if (newQuantity < 1) {
       handleRemoveItem(productId);
@@ -247,8 +218,10 @@ export default function CartPage() {
               const itemPrice = item.price;
               const itemQuantity = item.quantity;
               const itemTotal = itemPrice * itemQuantity;
-              // Safely get product ID
-              const productId = getProductId(item);
+              // Convert ObjectId to string for key
+              const productId = typeof item.product === 'object' 
+                ? String(item.product._id || item.product) 
+                : String(item.product);
               
               return (
                 <div
