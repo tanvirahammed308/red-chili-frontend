@@ -1,4 +1,4 @@
-
+// app/products/[id]/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -7,9 +7,39 @@ import Image from "next/image";
 import Link from "next/link";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { getProductById } from "@/redux/features/product/product.slice";
-import { FaStar, FaStarHalfAlt, FaRegStar, FaShoppingCart, FaHeart, FaRegHeart, FaShare, FaArrowLeft, FaTruck, FaClock, FaUtensils, FaFire, FaLeaf, FaChevronLeft, FaChevronRight, FaQuoteLeft, FaMinus, FaPlus } from "react-icons/fa";
+import { addToCart } from "@/redux/features/cart/cart.slice";
+import { 
+  FaStar, 
+  FaStarHalfAlt, 
+  FaRegStar, 
+  FaShoppingCart, 
+  FaHeart, 
+  FaRegHeart, 
+  FaShare, 
+  FaArrowLeft, 
+  FaTruck, 
+  FaClock, 
+  FaUtensils, 
+  FaFire, 
+  FaLeaf, 
+  FaChevronLeft, 
+  FaChevronRight, 
+  FaQuoteLeft, 
+  FaMinus, 
+  FaPlus 
+} from "react-icons/fa";
 import { MdLocalOffer, MdZoomIn } from "react-icons/md";
 import Swal from "sweetalert2";
+
+interface Review {
+  id: number;
+  name: string;
+  avatar: string;
+  rating: number;
+  date: string;
+  comment: string;
+  verified: boolean;
+}
 
 export default function ProductDetailsPage() {
   const { id } = useParams();
@@ -22,21 +52,17 @@ export default function ProductDetailsPage() {
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [selectedSize, setSelectedSize] = useState("Medium");
   const [isZoomed, setIsZoomed] = useState(false);
+  const [selectedSize, setSelectedSize] = useState("Medium");
   const reviewsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Product images array
-  const productImages = [
-    product?.image || "",
-    product?.image || "",
-    product?.image || "",
-    product?.image || "",
-    product?.image || "",
-  ];
+  // Product images array - use product image or fallback
+  const productImages = product?.image 
+    ? [product.image, product.image, product.image, product.image, product.image]
+    : ["/images/placeholder.jpg", "/images/placeholder.jpg", "/images/placeholder.jpg", "/images/placeholder.jpg", "/images/placeholder.jpg"];
 
   // Reviews data
-  const reviews = [
+  const reviews: Review[] = [
     {
       id: 1,
       name: "John Doe",
@@ -83,7 +109,12 @@ export default function ProductDetailsPage() {
     }
   }, [dispatch, id]);
 
-  const handleAddToCart = () => {
+  // Reset quantity when product changes
+  useEffect(() => {
+    setQuantity(1);
+  }, [product]);
+
+  const handleAddToCart = async () => {
     if (!currentUser) {
       Swal.fire({
         icon: "info",
@@ -101,15 +132,31 @@ export default function ProductDetailsPage() {
       return;
     }
 
-    Swal.fire({
-      icon: "success",
-      title: "Added to Cart!",
-      text: `${quantity} × ${product?.name} added to your cart`,
-      timer: 1500,
-      showConfirmButton: false,
-      position: "bottom-end",
-      toast: true,
-    });
+    if (!product) return;
+
+    try {
+      await dispatch(addToCart({ 
+        productId: product._id, 
+        quantity 
+      })).unwrap();
+      
+      Swal.fire({
+        icon: "success",
+        title: "Added to Cart!",
+        text: `${quantity} × ${product.name} added to your cart`,
+        timer: 1500,
+        showConfirmButton: false,
+        position: "bottom-end",
+        toast: true,
+      });
+    } catch (error: any) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error || "Failed to add to cart",
+        confirmButtonColor: "#dc2626",
+      });
+    }
   };
 
   const handleAddToWishlist = () => {
@@ -142,16 +189,24 @@ export default function ProductDetailsPage() {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    Swal.fire({
-      icon: "success",
-      title: "Link Copied!",
-      text: "Product link copied to clipboard",
-      timer: 1500,
-      showConfirmButton: false,
-      toast: true,
-      position: "bottom-end",
-    });
+    if (navigator.share) {
+      navigator.share({
+        title: product?.name || "Product",
+        text: `Check out ${product?.name} on our menu!`,
+        url: window.location.href,
+      }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      Swal.fire({
+        icon: "success",
+        title: "Link Copied!",
+        text: "Product link copied to clipboard",
+        timer: 1500,
+        showConfirmButton: false,
+        toast: true,
+        position: "bottom-end",
+      });
+    }
   };
 
   const updateQuantity = (amount: number) => {
@@ -183,9 +238,20 @@ export default function ProductDetailsPage() {
     return (sum / reviews.length).toFixed(1);
   };
 
+  const scrollReviews = (direction: "left" | "right") => {
+    if (reviewsContainerRef.current) {
+      const scrollAmount = 300;
+      const currentScroll = reviewsContainerRef.current.scrollLeft;
+      reviewsContainerRef.current.scrollTo({
+        left: direction === "left" ? currentScroll - scrollAmount : currentScroll + scrollAmount,
+        behavior: "smooth"
+      });
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-gray-50 to-gray-100 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
         <div className="text-center">
           <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-red-600 mx-auto"></div>
           <p className="mt-4 text-gray-600 text-sm sm:text-base">Loading product details...</p>
@@ -196,7 +262,7 @@ export default function ProductDetailsPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-to-br from-gray-50 to-gray-100 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 px-4">
         <div className="text-center">
           <div className="text-5xl sm:text-6xl mb-4">🍽️</div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Product Not Found</h2>
@@ -213,8 +279,8 @@ export default function ProductDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
-      {/* Back Button - Responsive */}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Back Button */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 pt-4 sm:pt-6">
         <button
           onClick={() => router.back()}
@@ -232,14 +298,14 @@ export default function ProductDetailsPage() {
         </button>
       </div>
 
-      {/* Product Main Section - Responsive Grid */}
+      {/* Product Main Section */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
         <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 p-4 sm:p-6 lg:p-8">
-            {/* Left Side - Responsive Images */}
+            {/* Left Side - Images */}
             <div>
               {/* Main Image */}
-              <div className="relative h-64 sm:h-80 md:h-96 lg:h-125 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-3 sm:mb-4 group">
+              <div className="relative h-64 sm:h-80 md:h-96 rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 mb-3 sm:mb-4 group">
                 <Image
                   src={productImages[activeImage]}
                   alt={product.name}
@@ -250,10 +316,11 @@ export default function ProductDetailsPage() {
                 <button
                   onClick={() => setIsZoomed(true)}
                   className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 bg-black/50 text-white p-1.5 sm:p-2 rounded-full hover:bg-black/70 transition"
+                  aria-label="Zoom in"
                 >
                   <MdZoomIn size={16} className="sm:w-5 sm:h-5" />
                 </button>
-                {product.stock < 10 && product.stock > 0 && (
+                {product.stock !== undefined && product.stock < 10 && product.stock > 0 && (
                   <span className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-orange-500 text-white text-[10px] sm:text-xs px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-full">
                     Only {product.stock} left
                   </span>
@@ -265,7 +332,7 @@ export default function ProductDetailsPage() {
                 )}
               </div>
               
-              {/* Thumbnail Images - Responsive */}
+              {/* Thumbnail Images */}
               <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2">
                 {productImages.map((img, idx) => (
                   <button
@@ -276,10 +343,11 @@ export default function ProductDetailsPage() {
                         ? "border-red-500 ring-1 sm:ring-2 ring-red-200 scale-105" 
                         : "border-gray-200 hover:border-red-300 hover:scale-105"
                     }`}
+                    aria-label={`View image ${idx + 1}`}
                   >
                     <Image
                       src={img}
-                      alt={`View ${idx + 1}`}
+                      alt={`${product.name} view ${idx + 1}`}
                       width={96}
                       height={96}
                       className="w-full h-full object-cover"
@@ -289,14 +357,14 @@ export default function ProductDetailsPage() {
               </div>
             </div>
 
-            {/* Right Side - Product Info (Responsive) */}
+            {/* Right Side - Product Info */}
             <div>
               {/* Category Badge */}
               <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <span className="text-[10px] sm:text-xs bg-red-100 text-red-600 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
-                  {product.category}
+                  {product.category || "Food"}
                 </span>
-                {product.stock > 0 ? (
+                {product.stock !== undefined && product.stock > 0 ? (
                   <span className="text-[10px] sm:text-xs bg-green-100 text-green-600 px-2 py-0.5 sm:px-3 sm:py-1 rounded-full">
                     In Stock
                   </span>
@@ -322,7 +390,7 @@ export default function ProductDetailsPage() {
 
               {/* Price */}
               <div className="mb-4">
-                <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-600">${product.price}</span>
+                <span className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-600">${product.price.toFixed(2)}</span>
                 <span className="text-gray-400 line-through ml-2 text-sm sm:text-base">${(product.price * 1.2).toFixed(2)}</span>
                 <span className="text-green-600 text-xs sm:text-sm ml-2">20% OFF</span>
               </div>
@@ -332,8 +400,8 @@ export default function ProductDetailsPage() {
                 <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
                   {showFullDescription
                     ? product.description
-                    : `${product.description.substring(0, 150)}...`}
-                  {product.description.length > 150 && (
+                    : `${product.description?.substring(0, 150) || ''}...`}
+                  {product.description?.length > 150 && (
                     <button
                       onClick={() => setShowFullDescription(!showFullDescription)}
                       className="text-red-600 hover:underline ml-2 font-medium text-sm"
@@ -344,7 +412,7 @@ export default function ProductDetailsPage() {
                 </p>
               </div>
 
-              {/* Size Selection - Responsive */}
+              {/* Size Selection */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">Select Size</h3>
                 <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -364,7 +432,7 @@ export default function ProductDetailsPage() {
                 </div>
               </div>
 
-              {/* Quantity - Responsive */}
+              {/* Quantity */}
               <div className="mb-6">
                 <h3 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">Quantity</h3>
                 <div className="flex items-center gap-4">
@@ -373,6 +441,7 @@ export default function ProductDetailsPage() {
                       onClick={() => updateQuantity(-1)}
                       disabled={quantity <= 1}
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 transition"
+                      aria-label="Decrease quantity"
                     >
                       <FaMinus size={12} className="sm:w-4 sm:h-4" />
                     </button>
@@ -381,22 +450,23 @@ export default function ProductDetailsPage() {
                       onClick={() => updateQuantity(1)}
                       disabled={quantity >= (product.stock || 99)}
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 border-gray-300 flex items-center justify-center hover:bg-gray-100 disabled:opacity-50 transition"
+                      aria-label="Increase quantity"
                     >
                       <FaPlus size={12} className="sm:w-4 sm:h-4" />
                     </button>
                   </div>
                   <span className="text-xs sm:text-sm text-gray-500">
-                    {product.stock} items available
+                    {product.stock || 0} items available
                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons - Responsive */}
+              {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 mb-6">
                 <button
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-linear-to-r from-red-600 to-red-500 text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base hover:from-red-700 hover:to-red-600 transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-lg sm:rounded-xl font-semibold text-sm sm:text-base hover:from-red-700 hover:to-red-600 transition-all duration-300 hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FaShoppingCart size={14} className="sm:w-4 sm:h-4" />
                   Add to Cart
@@ -417,22 +487,22 @@ export default function ProductDetailsPage() {
                 </button>
               </div>
 
-              {/* Delivery Info - Responsive */}
+              {/* Delivery Info */}
               <div className="border-t-2 pt-4 space-y-2 sm:space-y-3">
                 <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                     <FaTruck className="text-green-600 text-xs sm:text-sm" />
                   </div>
                   <span className="text-gray-600">Free delivery on orders over $30</span>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
                     <FaClock className="text-orange-600 text-xs sm:text-sm" />
                   </div>
                   <span className="text-gray-600">Estimated delivery: 20-30 min</span>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm">
-                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                     <FaUtensils className="text-red-600 text-xs sm:text-sm" />
                   </div>
                   <span className="text-gray-600">Prepared with love by our expert chefs</span>
@@ -442,12 +512,12 @@ export default function ProductDetailsPage() {
           </div>
         </div>
 
-        {/* Additional Info Section - Responsive Grid */}
+        {/* Additional Info Section */}
         <div className="mt-6 sm:mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           {/* Nutrition Info */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 hover:shadow-lg transition">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                 <FaFire className="text-red-500 text-sm sm:text-base" />
               </div>
               <h3 className="font-semibold text-gray-800 text-sm sm:text-lg">Nutrition</h3>
@@ -463,7 +533,7 @@ export default function ProductDetailsPage() {
           {/* Ingredients */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 hover:shadow-lg transition">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                 <FaLeaf className="text-green-500 text-sm sm:text-base" />
               </div>
               <h3 className="font-semibold text-gray-800 text-sm sm:text-lg">Ingredients</h3>
@@ -480,7 +550,7 @@ export default function ProductDetailsPage() {
           {/* Allergy Info */}
           <div className="bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 hover:shadow-lg transition">
             <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-orange-100 rounded-full flex items-center justify-center shrink-0">
                 <MdLocalOffer className="text-orange-500 text-sm sm:text-base" />
               </div>
               <h3 className="font-semibold text-gray-800 text-sm sm:text-lg">Allergy Info</h3>
@@ -492,7 +562,7 @@ export default function ProductDetailsPage() {
           </div>
         </div>
 
-        {/* Reviews Section - Responsive */}
+        {/* Reviews Section */}
         <div className="mt-6 sm:mt-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 sm:mb-6 gap-3">
             <div>
@@ -509,23 +579,29 @@ export default function ProductDetailsPage() {
             </div>
           </div>
 
-          {/* Reviews Carousel - Responsive */}
+          {/* Reviews Carousel */}
           <div className="relative">
+            <button
+              onClick={() => scrollReviews("left")}
+              className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg transition-all duration-200 -ml-2 sm:-ml-3"
+              aria-label="Scroll left"
+            >
+              <FaChevronLeft className="text-gray-600 text-xs sm:text-sm" />
+            </button>
             <div
               ref={reviewsContainerRef}
               className="flex gap-3 sm:gap-4 overflow-x-auto scroll-smooth pb-4 hide-scrollbar"
-              style={{ scrollBehavior: "smooth" }}
             >
               {reviews.map((review) => (
                 <div
                   key={review.id}
-                  className="min-w-70 sm:min-w-[320px] md:min-w-95 bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 hover:shadow-lg transition-all duration-300 border border-gray-100"
+                  className="min-w-[280px] sm:min-w-[320px] md:min-w-[350px] bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-5 hover:shadow-lg transition-all duration-300 border border-gray-100"
                 >
                   <FaQuoteLeft className="text-red-200 text-2xl sm:text-3xl mb-2 sm:mb-3" />
                   <p className="text-gray-600 text-xs sm:text-sm mb-3 sm:mb-4 line-clamp-3">{review.comment}</p>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-full flex items-center justify-center">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-red-100 rounded-full flex items-center justify-center shrink-0">
                         <span className="text-red-600 font-semibold text-xs sm:text-sm">{review.avatar}</span>
                       </div>
                       <div>
@@ -541,8 +617,13 @@ export default function ProductDetailsPage() {
                 </div>
               ))}
             </div>
-            <div className="absolute left-0 top-0 bottom-0 w-6 sm:w-8 bg-linear-to-r from-gray-50 to-transparent pointer-events-none"></div>
-            <div className="absolute right-0 top-0 bottom-0 w-6 sm:w-8 bg-linear-to-l from-gray-50 to-transparent pointer-events-none"></div>
+            <button
+              onClick={() => scrollReviews("right")}
+              className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white p-1.5 sm:p-2 rounded-full shadow-md hover:shadow-lg transition-all duration-200 -mr-2 sm:-mr-3"
+              aria-label="Scroll right"
+            >
+              <FaChevronRight className="text-gray-600 text-xs sm:text-sm" />
+            </button>
           </div>
 
           {/* Write Review Button */}
@@ -605,7 +686,7 @@ export default function ProductDetailsPage() {
           </div>
         </div>
 
-        {/* Related Products - Responsive */}
+        {/* Related Products */}
         <div className="mt-6 sm:mt-8">
           <h2 className="text-lg sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">You May Also Like</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
@@ -613,7 +694,7 @@ export default function ProductDetailsPage() {
               <div key={item} className="bg-white rounded-lg sm:rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 group cursor-pointer">
                 <div className="relative h-28 sm:h-32 md:h-36 bg-gray-100 overflow-hidden">
                   <Image
-                    src={product.image}
+                    src={product.image || "/images/placeholder.jpg"}
                     alt="Related product"
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -630,7 +711,7 @@ export default function ProductDetailsPage() {
         </div>
       </div>
 
-      {/* Image Zoom Modal - Responsive */}
+      {/* Image Zoom Modal */}
       {isZoomed && (
         <div
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-2 sm:p-4"
@@ -650,18 +731,21 @@ export default function ProductDetailsPage() {
             <button
               onClick={() => setIsZoomed(false)}
               className="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white/20 text-white p-1.5 sm:p-2 rounded-full hover:bg-white/30 transition text-sm sm:text-base"
+              aria-label="Close zoom"
             >
               ✕
             </button>
             <button
               onClick={() => setActiveImage((prev) => (prev > 0 ? prev - 1 : productImages.length - 1))}
               className="absolute left-2 top-1/2 -translate-y-1/2 sm:left-4 bg-white/20 text-white p-1.5 sm:p-2 rounded-full hover:bg-white/30 transition"
+              aria-label="Previous image"
             >
               <FaChevronLeft size={16} className="sm:w-6 sm:h-6" />
             </button>
             <button
               onClick={() => setActiveImage((prev) => (prev < productImages.length - 1 ? prev + 1 : 0))}
               className="absolute right-2 top-1/2 -translate-y-1/2 sm:right-4 bg-white/20 text-white p-1.5 sm:p-2 rounded-full hover:bg-white/30 transition"
+              aria-label="Next image"
             >
               <FaChevronRight size={16} className="sm:w-6 sm:h-6" />
             </button>
@@ -678,17 +762,15 @@ export default function ProductDetailsPage() {
           scrollbar-width: none;
         }
         
-        /* Extra small devices (phones, 480px and down) */
         @media (max-width: 480px) {
-          .xs\:inline {
+          .xs\\:inline {
             display: inline;
           }
-          .xs\:hidden {
+          .xs\\:hidden {
             display: none;
           }
         }
         
-        /* Small devices (phones, 640px and down) */
         @media (max-width: 640px) {
           .line-clamp-3 {
             display: -webkit-box;
